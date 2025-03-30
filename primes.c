@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -12,11 +12,11 @@ void filtro (int arriba_in){
 		perror("Rompio la lectura del pipe\n");
 	}
 	if (leido == 0){
-		perror("Se llamo a filtro con un EOF\n");
+		return;
 	}
 
-	printf("primo %d",x);
-
+	printf("primo %d\n",x);
+    fflush(stdout);
 	int abajo[2];
 	pipe(abajo);
 	if ((*abajo) < 0) {
@@ -34,17 +34,14 @@ void filtro (int arriba_in){
 	} else{
 		int numero;
 		leido=read(arriba_in,&numero, sizeof(numero));
-		if (leido == -1){
-			perror("Rompio la lectura del pipe\n");
-		}
 		while (numero!= EOF){
-			if (numero%x!=0) {
-				write(abajo[1], &numero, sizeof(numero));
-			}
-			leido=read(arriba_in,&numero, sizeof(numero));
 			if (leido == -1){
 				perror("Rompio la lectura del pipe\n");
 			}
+			if (numero % x !=0) {
+				write(abajo[1], &numero, sizeof(numero));
+			}
+			leido=read(arriba_in,&numero, sizeof(numero));
 		}
 		close(abajo[1]);
 		close(arriba_in);
@@ -70,13 +67,13 @@ int main(int argc, char *argv[]){
 		filtro(primer_pipe[0]);
 		exit(0);
 	} else{
+	    int numero_max=atoi(argv[1]);
 		ssize_t escrito;
-		for (int i=2;i<=argc;i++){
-			escrito=write(primer_pipe[1], &argv[i], sizeof(argv[i]));
+		for (int i=2;i<=numero_max;i++){
+			escrito=write(primer_pipe[1], &i, sizeof(i));
 			if (escrito == -1){
-				perror("Rompio la lectura del pipe\n");
+				perror("Rompio la escrtirura del pipe\n");
 			}
-
 		}
 		close(primer_pipe[1]);
 		wait(0);
